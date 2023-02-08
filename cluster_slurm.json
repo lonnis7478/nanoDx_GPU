@@ -1,0 +1,28 @@
+{
+    "__default__" :
+    {
+        "time" : "02:00",
+        "mem" : 4096
+    },
+    "RF5xCVrecal" :
+    {
+        "time" : "03:59",
+        "mem" : 8192
+    },
+    "make_GC_plot" :
+    {
+        "mem" : 65536
+    },
+    "plot_tSNE" :
+    {
+        "mem" : 8192
+    },
+    "readCpGs" :
+    {
+        "mem" : 12288
+    },
+    "pileup_CpG" :
+    {
+    "mem" : 12288
+    }
+}

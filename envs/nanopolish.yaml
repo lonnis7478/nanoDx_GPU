@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - default
+dependencies:
+  - minimap2=2.22
+  - samtools
+  - nanopolish=0.13.2
+  - ont_vbz_hdf_plugin=1.0.1

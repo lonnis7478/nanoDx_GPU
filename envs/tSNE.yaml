@@ -1,0 +1,21 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - default
+dependencies:
+  - r-rtsne
+  - r-irlba
+  - r-ggplot2 
+  - r-ggtext
+  - r-data.table
+  - r-dplyr
+  - r-matrixstats
+  - r-plotly
+  - r-rmarkdown
+  - r-r.utils
+  - bioconductor-rhdf5
+  - r-reticulate
+  - pandas
+  - numpy
+  - scipy

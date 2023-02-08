@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - default
+dependencies:
+  - nanoplot=1.28.2
+  - nanostat=1.4.0

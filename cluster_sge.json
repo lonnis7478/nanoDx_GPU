@@ -1,0 +1,20 @@
+{
+    "__default__" :
+    {
+        "time" : "02:00:00",
+        "mem" : 4g
+    },
+    "randomForest_PanCancer" :
+    {
+        "time" : "02:00:00",
+        "mem" : 6g
+    },
+    "make_GC_plot" :
+    {
+        "mem" : 64g
+    },
+    "plot_tSNE" :
+    {
+        "mem" : 8g
+    }
+}

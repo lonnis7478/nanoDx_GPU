@@ -1,0 +1,9 @@
+channels:
+- conda-forge
+dependencies:
+- pip=21.3.1=pyhd8ed1ab_0
+- python=3.6.15=hb7a2778_0_cpython
+- pip:
+  - megalodon==2.5.0
+  - pandas==1.1.5
+  - ont-pyguppy-client-lib==6.4.2

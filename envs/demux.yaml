@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - default
+dependencies:
+  - qcat=1.1.0
+  - ont-fast5-api

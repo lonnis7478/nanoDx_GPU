@@ -1,0 +1,102 @@
+---
+output:
+  pdf_document:
+    fig_height: 3
+    latex_engine: pdflatex
+header-includes:
+   - \usepackage{helvet}
+   - \renewcommand*\familydefault{\sfdefault}
+   - \usepackage[T1]{fontenc}
+
+geometry: margin=0.5in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+dict <- fread(DICT_FILE,data.table=F, check.names = T)
+rownames(dict) <- dict$Methylation.Class.Name.Abbreviated
+```
+
+```{r, out.height= "50px", echo=FALSE, fig.align="right"}
+knitr::include_graphics("header_PDFreport.pdf")
+```
+
+## Nanopore sequencing report
+
+# `r snakemake@wildcards[["sample"]]`
+
+## Quality control metrics
+
+#### Barcode statistics
+
+```{r comment='', echo=FALSE}
+cat(readLines(DEMUX), sep = '\n')
+```
+
+#### Read statistics
+
+```{r comment='', echo=FALSE}
+cat(readLines(NANOSTAT, n=15), sep = '\n') # Read general summary (first 15 lines) of NanoStat statistics
+```
+
+Mean genome coverage is `r meanDepth`X.
+
+```{r, out.height= "150px", echo=FALSE}
+knitr::include_graphics(RL)
+knitr::include_graphics(GC)
+```
+
+## Copy number profile
+
+```{r, out.height = "180px", echo=FALSE}
+knitr::include_graphics(CN)
+```
+
+## Methylation based classification
+
+Methylation-based classification is based on **`r as.integer(model_info$num.features)`** CpG sites (overlap of sites covered in this sample and the training set).
+The out-of-bag error of this ad-hoc classifier is **`r round(model_info$oob.error*100, digits=1)`%**. Using this classifier, the sample has been classified as **`r dict[rownames(votes[which.max(votes$cal_Freq),]),"Methylation.Class.Name"]`**. 
+This prediction has a confidence score of **`r round(max(votes$cal_Freq), digits=2)`**.
+The raw and calibrated score distribution for the Top 10 entities is given below.
+
+```{r, out.height = "200px", echo=FALSE, warning=FALSE}
+votes$methClass <- dict[rownames(votes),]$Methylation.Class.Name
+
+library(ggplot2)
+
+ggplot(data=votes, aes(x=methClass, y=Freq)) +
+  geom_bar(stat="identity", fill="#1f78b4") +
+  coord_flip() +
+  scale_x_discrete(limits=votes[order(votes$Freq,decreasing=T),]$methClass[10:1]) +
+  ylab("votes (%)") + xlab("methylation class") +
+  theme_classic() + theme(aspect.ratio=1)
+```
+
+```{r, out.height = "200px", echo=FALSE, warning=FALSE}
+ggplot(data=votes, aes(x=methClass, y=cal_Freq)) +
+  geom_bar(stat="identity", fill="#dc143c") +
+  coord_flip() +
+  scale_x_discrete(limits=votes[order(votes$cal_Freq,decreasing=T),]$methClass[10:1]) +
+  ylim(0,1) +
+  ylab("confidence score") + xlab("methylation class") +
+  theme_classic() + theme(aspect.ratio=1)
+```
+
+## t-SNE plot
+
+t-SNE plots are meant for visual quality control, not classification, and must be interpreted with care.
+
+```{r, echo=FALSE}
+knitr::include_graphics(tSNE)
+```
+
+#### Disclaimer
+
+Methylation-based classification using nanopore whole genome sequening is a research tool currently under development. It has not been clinically validated in sufficiently large cohorts. Interpretation and implementation of the results in a clinical setting is in the sole responsibility of the treating physician.
+
+  
+  
+
+(Report generated on `r Sys.time()`. Pipeline version: `r system("git describe --tags", intern = T)`, `r system("git log --pretty=format:'%h' -n 1", intern=T)`)

@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - default
+dependencies:
+  - ngmlr=0.2.7
+  - sniffles=1.0.11
+  - samtools=1.9
+  - r-circlize
+  - r-data.table
