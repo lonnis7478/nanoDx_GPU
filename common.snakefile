@@ -1,29 +1,8 @@
 
-rule minimap2_align:
-    input:
-        fq="fastq/{sample}.fq",
-        ref=config["ref_genome"]
-    output:
-        "bam/{sample}.bam"
-    benchmark:
-        "benchmarks/{sample}.minimap.align.benchmark.txt"
-    threads: 12
-    conda: "envs/minimap.yaml"
-    shell:
-        "minimap2 --MD -L -t 9 -ax map-ont {input.ref} {input.fq} | samtools view -bS - | samtools sort -T tmp/{wildcards.sample} - > {output} "
-
-rule indexBAM:
-    input:
-        "{sample}.bam"
-    output:
-        "{sample}.bam.bai"
-    conda: "envs/minimap.yaml"
-    shell:
-        "samtools index {input}"
 
 rule filterMAPQ:
     input:
-        "bam/{sample}.bam"
+        "megalodon/{sample}.bam"
     output:
         "bam_mapq/{sample}.bam"
     params:
@@ -34,8 +13,8 @@ rule filterMAPQ:
 
 rule coverage_wig:
     input:
-        bam = "bam/{sample}.bam",
-        bai = "bam/{sample}.bam.bai"
+        bam = "megalodon/{sample}/mappings.sorted.bam",
+        bai = "megalodon/{sample}/mappings.sorted.bam.bai"
     output:
         "igv/{sample}.wig"
     threads: 1
@@ -45,8 +24,8 @@ rule coverage_wig:
 
 rule coverage_mosdepth:
     input:
-        bam = "bam/{sample}.bam",
-        bai = "bam/{sample}.bam.bai"
+        bam = "megalodon/{sample}/mappings.sorted.bam",
+        bai = "megalodon/{sample}/mappings.sorted.bam.bai"
     output:
         "stats/{sample}.mosdepth.summary.txt",
         "stats/{sample}.regions.bed.gz"
@@ -57,24 +36,21 @@ rule coverage_mosdepth:
 
 rule QC_nanostat:
     input:
-        bam = "bam/{sample}.bam",
-        bai = "bam/{sample}.bam.bai"
+        bam = "megalodon/{sample}/mappings.sorted.bam",
+        bai = "megalodon/{sample}/mappings.sorted.bam.bai"
     output:
-        txt = "stats/{sample}.nanostat.txt",
-	tsv = "stats/{sample}.nanostat.tsv"
-    threads: 12
-    conda: "envs/qc.yaml"
+        txt = "stats/{sample}.nanostat.txt"
+	
+    conda: "/envs/qc.yaml"
     shell:
-        """
-	NanoStat -t {threads} --bam {input.bam} > {output.txt}
-	NanoStat -t {threads} --tsv --bam {input.bam} > {output.tsv}
-	"""
+        "NanoStat -t {threads} --bam {input.bam} > {output.txt}"
+        
 
 rule CN_profile:
     input:
-        bam="bam/{sample}.bam",
-        bai="bam/{sample}.bam.bai",
-        normal_bam="static/FAF04090.bam"
+        bam="megalodon/{sample}/mappings.sorted.bam",
+        bai="megalodon/{sample}/mappings.sorted.bam.bai",
+        normal_bam=config["bam_ref"]
     output:
         pdf="plots/{sample}-{binsize}-{alpha}-CNplot.pdf",
         rplot="plots/{sample}-CN-{binsize}-{alpha}.RData",
@@ -87,8 +63,8 @@ rule CN_profile:
 localrules: mirrorBAM
 rule mirrorBAM:
     input:
-        bam="bam/{sample}.bam",
-        bai="bam/{sample}.bam.bai"
+        bam="megalodon/{sample}/mappings.sorted.bam",
+        bai="megalodon/{sample}/mappings.sorted.bam.bai"
     output:
         dir=temp(directory("tmp/ACE/{sample}"))
     shell: "mkdir {output} && cp {input} {output}"
