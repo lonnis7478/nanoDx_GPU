@@ -1,5 +1,3 @@
-
-
 rule filterMAPQ:
     input:
         "megalodon/{sample}.bam"
