@@ -1,8 +1,8 @@
 rule filterMAPQ:
     input:
-        "megalodon/{sample}.bam"
+        "megalodon/{sample}/mappings.bam"
     output:
-        "bam_mapq/{sample}.bam"
+        "bam_mapq/{sample}/mappings.bam"
     params:
         minMAPQ="20"
     conda: "envs/minimap.yaml"
@@ -39,7 +39,7 @@ rule QC_nanostat:
     output:
         txt = "stats/{sample}.nanostat.txt"
 	
-    conda: "/envs/qc.yaml"
+    conda: "envs/qc.yaml"
     shell:
         "NanoStat -t {threads} --bam {input.bam} > {output.txt}"
         

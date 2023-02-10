@@ -12,7 +12,7 @@ rule hg19_GC_dist:
 
 rule make_GC_plot:
     input:
-        BAM="bam/{sample}.bam",
+        BAM="megalodon/{sample}/mappings.sorted.bam",
         ref_chopped="static/hg19_1K_subsample.fa"
     output:
         GC_plot="figures/{sample}_GC.pdf",
