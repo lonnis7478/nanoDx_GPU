@@ -1,10 +1,33 @@
-ref_genome: static/hg19.fa
-ref_genome_masked: static/hg19.fa
-bam_ref: static/FAF04090.bam
-FAST5_basedir: /home/sander/nanopore/Guppy_testing
-trainingset_dir: static/Trainingsets
+ref_genome: /home/vml/MagDx/static/hg19.mmi
+ref_genome_masked: /home/vml/MagDx/static/hg19.mmi
+bam_ref: /home/vml/MagDx/static/FAF04090.bam
+trainingset_dir: /home/vml/MagDx/static/Trainingsets
 chr_sizes: static/hg19.chrom.sizes
 email: "info@mail.com"
+
+guppy_basecall_server_path: "/opt/ont/guppy/bin/guppy_basecall_server"
+
+
+############ Check Fast5 directory ###########3
+
+#FAST5_basedir: /home/vml/WGS_07022023
+#FAST5_basedir: /home/vml/Guppy_testing
+FAST5_basedir: /encrypteddata/NDMA_fast5
+
+############################################
+
+
+
+##################3 Check correct models ##################
+
+######### kit 12 versions (r9.4.1)##########
+guppy_config: "dna_r9.4.1_450bps_hac.cfg"
+remora_model: "dna_r9.4.1_e8 hac 0.0.0 5mc CG 0"
+
+######### kit 14 versions (r10.4.1)########## 
+#guppy_config: "dna_r10.4.1_e8.2_400bps_hac_prom.cfg"
+#remora_model: "dna_r10.4_e8.1 hac 0.0.0 5mc CG 0" 
+
+#reports/<SAMPLE>_WGS_report_<TRAININGSET>.pdf
+
 max_CpG: 100000
-perform_basecalling: yes
-guppy_basecall_server_path: "/usr/bin/guppy_basecall_server"

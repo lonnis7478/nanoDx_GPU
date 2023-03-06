@@ -13,6 +13,7 @@ rule megalodon_per_chunk:
         ref=config["ref_genome"],
         basedir=config["FAST5_basedir"],
         guppy_path=config["guppy_basecall_server_path"]
+        
     output:
         "megalodon/{sample}/modified_bases.5mC.bed",
         "megalodon/{sample}/mappings.sorted.bam",
@@ -20,8 +21,23 @@ rule megalodon_per_chunk:
         "megalodon/{sample}/mappings.sorted.bam.bai",
         "megalodon/{sample}/basecalls.fastq"
     conda:"envs/megalodon.yaml"
+    params:
+        guppy_config = config["guppy_config"],
+        remora = config["remora_model"]
     shell:
-        "megalodon {input.basedir}/{wildcards.sample} --guppy-server-path {input.guppy_path} --mappings-format bam --reference {input.ref} --devices 0 --processes 16 --overwrite --outputs  basecalls mappings mod_mappings mods --guppy-config=dna_r9.4.1_450bps_hac.cfg --remora-modified-bases dna_r9.4.1_e8 hac 0.0.0 5mc CG 0 --sort-mappings --mod-map-base-conv m C --output-directory megalodon/{wildcards.sample}"
+        "megalodon {input.basedir}/{wildcards.sample} \
+        --guppy-server-path {input.guppy_path} \
+        --mappings-format bam \
+        --reference {input.ref} \
+        --devices 0 \
+        --processes 16 \
+        --overwrite \
+        --outputs  basecalls mappings mod_mappings mods \
+        --guppy-config {params.guppy_config} \
+        --remora-modified-bases {params.remora} \
+        --sort-mappings \
+        --mod-map-base-conv m C \
+        --output-directory megalodon/{wildcards.sample}"
 
 rule fix_bedMethyl:
     input:
