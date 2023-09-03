@@ -18,8 +18,8 @@ import timeit
 sns.set(style='white', context='notebook', rc={'figure.figsize':(14,10)})
 
 
-train = pd.read_csv('../../datasets/MNIST_CSV/mnist_train.csv', header=None)
-test = pd.read_csv('../../datasets/MNIST_CSV/mnist_test.csv', header=None)
+train = pd.read_csv('../../../datasets/MNIST_CSV/mnist_train.csv', header=None)
+test = pd.read_csv('../../../datasets/MNIST_CSV/mnist_test.csv', header=None)
 
 
 y = train.loc[:,0].values
@@ -29,12 +29,12 @@ print(x.shape)
 standardized_data = StandardScaler().fit_transform(x)
 print(standardized_data.shape)
 
-x_subset = x[0:10000]
-y_subset = y[0:10000]
+x_subset = x[0:100000]
+y_subset = y[0:100000]
 
 start = time()
 #tsne = TSNE(n_components=2, perplexity=40, n_iter=300).fit_transform(x_subset)
-tsne = cudaTSNE(n_components=2, perplexity=40, n_iter=300).fit_transform(x_subset)
+tsne = cudaTSNE(n_components=2, perplexity=400, n_iter=300, learning_rate=1000).fit_transform(x_subset)
 done = time()
 
 print("Total elapsed time : ", done - start)
