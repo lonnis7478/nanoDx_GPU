@@ -8,7 +8,6 @@ import pickle
 
 import warnings
 
-
 fh5 =snakemake.input["trainingset_meth"]
 
 print(' Reading fh5 trainingset_meth.')

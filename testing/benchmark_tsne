@@ -1,0 +1,7 @@
+Regular (10000) : 14.127
+CUDA    (10000) : 2.549
+
+Regular (60000) : 141.600
+CUDA    (60000) : 6.351
+CUDA    (60000) - 1000 iterations :  8.889
+CUDA    (60000) - 4000 iterations :  18.834
