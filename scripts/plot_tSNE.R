@@ -8,7 +8,7 @@ case <- data.frame(t(sapply(case, function(x) as.numeric(as.character(x)))))
 
 ### load training set
 
-fh5 = "/home/sander/nanopore_new/nanoDx_GPU/static/Trainingsets/Capper_et_al_old.h5"
+fh5 = "/home/sander/nanopore_new/nanoDx_GPU/static/Trainingsets/Capper_et_al.h5"
 
 # dump HDF5 training set content
 h5ls(fh5)
@@ -19,9 +19,6 @@ trainingProbes <- h5read(fh5,"probeIDs")
 
 probes <- intersect(colnames(case), trainingProbes)
 idxs <- match(probes, trainingProbes)
-
-print(head(probes, 10))
-print(head(idxs, 10))
 
 message(paste(length(probes)," overlapping CpG sites between sample and reference set. Reading training set now...",sep=""))
 
@@ -40,11 +37,11 @@ library(matrixStats)
 beta <- as.matrix(m[,-1])
 sds <- colSds(beta, na.rm=F)
 maxSDs <- head(order(sds,decreasing=T),n=min(ncol(beta),50000))
-print(maxSDs)
 
 # set.seed(42)
 
-write.csv(beta[,maxSDs], file = "data.csv")
+write.csv(beta[,maxSDs], file = "R_beta_data.csv")
+quit()
 tsne <- Rtsne(beta[,maxSDs], partial_pca = T, initial_dims = 94, perplexity = 30, theta = 0, max_iter = 2500, check_duplicates = F, verbose = T)
 
 df <- data.frame(Dx = m[,1], tsne$Y)
@@ -74,11 +71,11 @@ hexCol[is.na(hexCol)] <- "grey"
 hexCol["unknown"] <- "red"
 
 ### reorder Dx factor levels
+write.csv(colorMap, file = "tsne_colormap.csv")
 
 print(colorMap)
 print(c(colorMap$colorLabel, "unknown"))
 df$Dx <- factor(df$Dx, levels = c(colorMap$colorLabel, "unknown"))
-
 
 ### plot
 

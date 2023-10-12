@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 import h5py
 import pyreadr
-from sklearn.ensemble import RandomForestClassifier
+#from sklearn.ensemble import RandomForestClassifier
+from cuml.ensemble import RandomForestClassifier
 import logging
 import collections
 import matplotlib.pyplot as plt
@@ -16,12 +17,14 @@ import pickle
 warnings.filterwarnings("ignore")
 
 ##### Reading trainingset data
-Probes,label = pickle.load( open( snakemake.input["data"], "rb" ) )
-fh5 =snakemake.input["trainingset_meth"]
+Probes,label = pickle.load( open( "../training/test_sample-FeatureSelection_idf-Capper_et_al.p", "rb" ) )
+fh5 = "../static/Trainingsets/Capper_et_al.h5"
 
 fh5=h5py.File(fh5)
 label=list(fh5['Dx'][:])
 label=[str(x).replace('b','').replace('\'','') for x in label]
+label_idx = np.arange(0, len(label), dtype=int)
+print("IDX : ", label_idx)
 probeIDs=list(fh5['probeIDs'][:])
 probeIDs=[str(x).replace('b','').replace('\'','') for x in probeIDs]
 train_data=fh5['betaValues']
@@ -29,11 +32,12 @@ train_data=fh5['betaValues']
 probes_idx= [i for i in range(len(probeIDs)) if probeIDs[i] in Probes]
 
 X_train=train_data[probes_idx,:]
-X_train = np.where(X_train > 0.6, 1, 0)
+X_train = np.where(X_train > 0.6, 1, 0).astype(np.float32)
+print("XTRAIN : ",X_train.dtype)
 X_train=pd.DataFrame(X_train.T,columns=[probeIDs[i] for i in probes_idx])
 
 #### Reading input case data
-METH_RDATA =snakemake.input["meth"]
+METH_RDATA = "../transformed_rdata/test_sample-transformed.RData"
 case=pyreadr.read_r(METH_RDATA)
 case=pd.DataFrame(data=list(case.items())[0][1]).T
 
@@ -42,10 +46,11 @@ X_test=case[X_train.columns.to_list()]
 
 ##### random forest classifier and get the votes
 print('Train random forest...')
-rf = RandomForestClassifier(criterion='entropy',  min_samples_split=4, min_samples_leaf=1,
-                       n_estimators=2000,random_state=42,n_jobs= 12,oob_score=True, verbose=1)
-rf.fit(X_train, label)
+rf = RandomForestClassifier(split_criterion=1,  min_samples_split=4, min_samples_leaf=1,
+                       n_estimators=2000,random_state=42, verbose=1)
+rf.fit(X_train, label_idx)
 
+print("Done training")
 pre_rf=rf.predict(X_test)
 x_score=max(rf.predict_proba(X_test)[0])
 pre_class=pre_rf[0]
@@ -74,8 +79,8 @@ votes['Dx'] = votes.index # class labels
 print('Running 5-fold CV...')
 def get_proba_CalibratedClassifierCV(X_train,y_train):
     cv = RepeatedStratifiedKFold(n_splits=5,n_repeats=1,random_state=1)
-    clf = RandomForestClassifier(criterion='entropy',  min_samples_split=4, min_samples_leaf=1,
-                       n_estimators=2000,random_state=42,n_jobs= 12,oob_score=True, verbose=1)
+    clf = RandomForestClassifier(split_criterion=1,  min_samples_split=4, min_samples_leaf=1,
+                       n_estimators=2000,random_state=42, verbose=1)
 
     clf_sigmoid = CalibratedClassifierCV(clf, cv=cv, method='sigmoid',n_jobs =-1,ensemble=False)
     clf_sigmoid.fit(X_train, y_train)
@@ -97,17 +102,17 @@ report_content=['Number of features: '+str(rf.n_features_),
                ]
 report="\n".join(report_content)
 
-with open(snakemake.output["txt"], 'w') as f:
+with open("../cuda_out/test_sample-RF5xCVrecal-Capper_et_al-cuml.txt", 'w') as f:
     f.write(report)
 
 ##### output votes and RF model info
-pyreadr.write_rdata(snakemake.output["votes"], df, df_name="votes")
-pyreadr.write_rdata(snakemake.output["model_info"], pd.DataFrame({'oob.error': [1 - rf.oob_score_], 'num.features': [rf.n_features_]}), df_name="model_info")
+pyreadr.write_rdata("../cuda_out/test_sample-votes-RF5xCVrecal-Capper_et_al-cuml.RData", df, df_name="votes")
+pyreadr.write_rdata("../cuda_out/test_sample-model_info-RF5xCVrecal-Capper_et_al-cuml.RData", pd.DataFrame({'oob.error': [1 - rf.oob_score_], 'num.features': [rf.n_features_]}), df_name="model_info")
 
 ##### plot piechart
-with PdfPages(snakemake.output["pdf"]) as pdf:
+with PdfPages("../cuda_out/test_sample-RF5xCVrecal-Capper_et_al-cuml.pdf") as pdf:
     plt.subplot(2, 1, 1)
-    plt.title(snakemake.wildcards["sample"])
+    plt.title("test sample")
     plt.pie(votes['Freq'],labels=list(votes.index),startangle=90,colors=brewer2mpl.get_map('Set1', 'qualitative', 9).mpl_colors)
     plt.subplot(2, 1, 2)
     plt.pie(df['cal_Freq'],labels=list(df.index),startangle=90,colors=brewer2mpl.get_map('Set1', 'qualitative', 9).mpl_colors)
