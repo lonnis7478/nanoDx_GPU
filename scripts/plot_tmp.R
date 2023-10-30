@@ -1,4 +1,4 @@
-input <- "../cuda_out/cuda_pca_70_Rdata_cuml_2023-10-11_16:43:00.545355"
+input <- "../cuda_out/cuda_pca_60_Rdata_cuml_2023-10-13_12:02:30.064327"
 df <- read.csv(paste0(input, ".csv"))
 library(ggtext)
 library(ggplot2)

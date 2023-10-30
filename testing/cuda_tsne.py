@@ -110,7 +110,7 @@ def plot_tsne(m, format=True, save_beta=False, out="cuda", use_old=False, cuml=F
         beta = pandas.read_csv("../cuda_out/R_beta_data.csv", index_col=0)
 
         if format:
-            (beta, filename) = format_beta_values(beta, output_file=out, pca_components=70)
+            (beta, filename) = format_beta_values(beta, output_file=out, pca_components=60)
             out = filename
         out+="_Rdata"
 

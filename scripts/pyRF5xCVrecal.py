@@ -3,28 +3,51 @@ import numpy as np
 import pandas as pd
 import h5py
 import pyreadr
-#from sklearn.ensemble import RandomForestClassifier
-from cuml.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier
+#from cuml.ensemble import RandomForestClassifier
 import logging
 import collections
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import brewer2mpl 
+import brewer2mpl
 import warnings
+
+from sklearn.decomposition import PCA
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
 import pickle
+from time import time
+
+from sklearn.preprocessing import StandardScaler
+
 warnings.filterwarnings("ignore")
+
+def format_beta_values(beta, scale=False, pca=True, pca_components=30, output_file="cuda"):
+
+    if scale:
+        scaler = StandardScaler()
+        beta = scaler.fit_transform(beta)
+        output_file += "_scaled"
+
+    if pca:
+        pca = PCA(n_components=pca_components)
+        beta = pca.fit_transform(beta)
+        output_file += "_pca_" + str(pca_components)
+
+    return (beta, output_file)
+
+
 
 ##### Reading trainingset data
 Probes,label = pickle.load( open( "../training/test_sample-FeatureSelection_idf-Capper_et_al.p", "rb" ) )
 fh5 = "../static/Trainingsets/Capper_et_al.h5"
 
+
+
 fh5=h5py.File(fh5)
 label=list(fh5['Dx'][:])
 label=[str(x).replace('b','').replace('\'','') for x in label]
-label_idx = np.arange(0, len(label), dtype=int)
-print("IDX : ", label_idx)
+label_idx = np.zeros((len(label)))
 probeIDs=list(fh5['probeIDs'][:])
 probeIDs=[str(x).replace('b','').replace('\'','') for x in probeIDs]
 train_data=fh5['betaValues']
@@ -32,11 +55,18 @@ train_data=fh5['betaValues']
 probes_idx= [i for i in range(len(probeIDs)) if probeIDs[i] in Probes]
 
 X_train=train_data[probes_idx,:]
-X_train = np.where(X_train > 0.6, 1, 0).astype(np.float32)
-print("XTRAIN : ",X_train.dtype)
+X_train = np.where(X_train > 0.6, 1, 0).astype(np.float32)[:]
 X_train=pd.DataFrame(X_train.T,columns=[probeIDs[i] for i in probes_idx])
 
+print("X_TRAIN DF : ",X_train.shape)
+print("X_TRAIN memory usage : ", X_train.memory_usage().sum())
+print(X_train)
+
+print(label_idx)
+print("LAbeL idx  shape : ", label_idx.shape)
+
 #### Reading input case data
+
 METH_RDATA = "../transformed_rdata/test_sample-transformed.RData"
 case=pyreadr.read_r(METH_RDATA)
 case=pd.DataFrame(data=list(case.items())[0][1]).T
@@ -46,14 +76,19 @@ X_test=case[X_train.columns.to_list()]
 
 ##### random forest classifier and get the votes
 print('Train random forest...')
-rf = RandomForestClassifier(split_criterion=1,  min_samples_split=4, min_samples_leaf=1,
-                       n_estimators=2000,random_state=42, verbose=1)
-rf.fit(X_train, label_idx)
 
-print("Done training")
+rf = RandomForestClassifier(criterion='entropy',  min_samples_split=4, min_samples_leaf=1,
+                       n_estimators=2000,random_state=42,n_jobs= 12,oob_score=True, verbose=1)
+rf.fit(X_train, label)
+
+start = time()
+rf.fit(X_train, label_idx)
+done = time()
+
 pre_rf=rf.predict(X_test)
 x_score=max(rf.predict_proba(X_test)[0])
 pre_class=pre_rf[0]
+
 
 ##### predict case and get the votes from each trees
 

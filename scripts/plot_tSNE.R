@@ -40,11 +40,11 @@ maxSDs <- head(order(sds,decreasing=T),n=min(ncol(beta),50000))
 
 # set.seed(42)
 
-write.csv(beta[,maxSDs], file = "R_beta_data.csv")
-quit()
 tsne <- Rtsne(beta[,maxSDs], partial_pca = T, initial_dims = 94, perplexity = 30, theta = 0, max_iter = 2500, check_duplicates = F, verbose = T)
 
 df <- data.frame(Dx = m[,1], tsne$Y)
+write.csv(df, file = "R_df.csv")
+quit()
 
 #save(df, file="tsne_test.RData")
 
