@@ -1,8 +1,10 @@
 channels:
   - conda-forge
   - bioconda
+  - epi2melabs
   - defaults
   - default
 dependencies:
-  - minimap2=2.15
-  - samtools=1.9
+  - minimap2=2.26
+  - samtools=1.17
+  - ont-modkit=0.2.1

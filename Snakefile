@@ -1,11 +1,17 @@
 configfile: "config.yaml"
 
-max_fast5 = config["max_fast5"] if 'max_fast5' in config.keys() else -1
-
 include: "common.snakefile"
 include: "basecall.snakefile"
 include: "methylation.snakefile"
 include: "figures.snakefile"
 include: "demux.snakefile"
 include: "SV.snakefile"
+
+# target rule to batch classification
+
+if 'batch_samples' in config.keys():
+  rule batch_reports:
+    input: expand("reports/{sample}_WGS_report_{{trainingset}}.pdf", sample=config['batch_samples'])
+    output: "reports/batch_reports_{trainingset}.zip"
+    shell: "zip {output} {input}"
 

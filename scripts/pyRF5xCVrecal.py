@@ -4,6 +4,7 @@ import pandas as pd
 import h5py
 import pyreadr
 from sklearn.ensemble import RandomForestClassifier
+#from cuml.ensemble import RandomForestClassifier
 import logging
 import collections
 import matplotlib.pyplot as plt
@@ -90,7 +91,7 @@ proba['Dx']=proba.index
 df=proba.merge(votes,how='left', left_on='Dx', right_on='Dx').fillna(0)
 
 ##### write results to txt file
-report_content=['Number of features: '+str(rf.n_features_),
+report_content=['Number of features: '+str(rf.n_features_in_),
                 "Predicted Class: "+pre_rf[0],
                 "Initial Score: "+ str(x_score),
                 "Calibrated Score: "+ str( proba.loc[pre_class].values[0])
@@ -102,7 +103,7 @@ with open(snakemake.output["txt"], 'w') as f:
 
 ##### output votes and RF model info
 pyreadr.write_rdata(snakemake.output["votes"], df, df_name="votes")
-pyreadr.write_rdata(snakemake.output["model_info"], pd.DataFrame({'oob.error': [1 - rf.oob_score_], 'num.features': [rf.n_features_]}), df_name="model_info")
+pyreadr.write_rdata(snakemake.output["model_info"], pd.DataFrame({'oob.error': [1 - rf.oob_score_], 'num.features': [rf.n_features_in_]}), df_name="model_info")
 
 ##### plot piechart
 with PdfPages(snakemake.output["pdf"]) as pdf:

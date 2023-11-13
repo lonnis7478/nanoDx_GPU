@@ -1,32 +1,53 @@
-# nanoDx_GPU pipeline
+# nanoDx pipeline 
+
+nanoDx is an open-source, end-to-end bioinformatics pipeline for DNA methylation-based classification of tumours using nanopore low-pass whole genome sequencing data. 
+
+# News and updates
+
+Please find the release history and changelog here: [https://gitlab.com/pesk/nanoDx/-/releases](https://gitlab.com/pesk/nanoDx/-/releases).
+
+To stay informed about releases and news related to the nanoDx pipeline, you can self-subscribe to the nanodx-users mailing list (no regular postings): [https://mailman.charite.de/mailman/listinfo/nanodx-users](https://mailman.charite.de/mailman/listinfo/nanodx-users)
 
 # Installation and configuration
 
 First, we assume that you have installed the following dependencies:
 
  - conda (we use [miniconda](https://docs.conda.io/en/latest/miniconda.html))
- - snakemake (>=5.4.0) with DRMAA support
+ - snakemake (>=5.4.0)
  - LaTeX (we use [TinyTeX](https://yihui.name/tinytex/), which can easily be installed from within R: `install.packages('tinytex') ; tinytex::install_tinytex()`)
- - guppy v3.1.5, ONT's proprietary basecaller (using the instructions and downloads in the ONT Community)
 
-Then, you can checkout the pipeline:
+Then, you can install the pipeline using:
 
 `git clone https://gitlab.com/pesk/nanoDx.git`
 
-Static data (training sets for methylation-based classification, pseudo germline BAM) can be downloaded here:
-
-`https://file-public.bihealth.org/transient/nanodx/`
+Static data (training sets for methylation-based classification, pseudo germline BAM) can be downloaded [here](https://charitede-my.sharepoint.com/:f:/g/personal/dongsheng_yuan_charite_de/EtXtX3enI0JEuYCQjc1_7iQB5EfEptXkdWGy7X4R40nOUw?e=Zry2bT).
 
 Some paths need to be set in the `config.yaml` file (see template `config.EXAMPLE.yaml`) in the pipeline directory to the FAST5 basedir (see Input data below) and the reference genome to be used:
 
 ```
-ref_genome: /fast/projects/cubit/current/static_data/precomputed/BWA/0.7.15/hg19/ucsc/hg19.fa
-ref_genome_masked: /fast/projects/cubit/current/static_data/precomputed/BWA/0.7.15/hg19/ucsc/hg19.fa
-FAST5_basedir: /fast/projects/nanodx/runs/WGS
-perform_basecalling: yes
+ref_genome: /path/to/hg19.fa
+FAST5_basedir: /path/to/FAST5
+basecalling_mode: guppy_cpu
+guppy_model: 
 ```
 
-The `perform_basecalling` flag can be set to `no` if your FAST5 files have been basecalled already (e.g. when sequenced on a GridION device).
+## (Modified) base calling
+
+Until version v0.5.1, modified bases (5mC) were called using [nanopolish](https://github.com/jts/nanopolish). However, nanopolish is no longer compatible to recent FAST5/POD5 file formats and sequencing chemistry.
+We have therefore implemented base and 5mC calling using ONT's proprietary software (guppy or dorado) which needs to be configured using the `basecalling_mode` option:
+
+ - `guppy_cpu`: basecalling will be performed using a recent guppy version (which will be automatically installed in the `resources/tools` subfolder) in a parallelized fashion (one job per FAST5 file) using CPU computation only.
+This option is recommended for high-performance compute cluster with high CPU capacity but no or little GPU resources.
+ - `guppy_gpu`: basecalling will be performed using a recent guppy version supporting GPU. Recommended for GPU-equipped workstations. Basecalling is performed for each FAST5 file individually.
+ - `dorado`: basecalling using the experimental [dorado](https://github.com/nanoporetech/dorado) basecaller. Basecalling is performed for each FAST5 file individually. This allows incremental basecalling while sequencing without having to re-basecall the entire run. This option is recommended for GPU equipped workstations and near-realtime analysis.
+ - `none_bam`: No base or modified base calling is performed. (Unaligned) modified BAM files output by MinKNOW or other pipelines are expected in the input folder (see `FAST5_basedir` config directive). This option requires that modified bases (5mC in CpG context) have been called with the correct model.
+ - `none_fastq`: No base or modified base calling is performed. FASTQ containing methylation calls (via MM/ML tags) are expected in the input folder (see `FAST5_basedir` config directive). This option requires that modified bases (5mC in CpG context) have been called with the correct model.
+
+The `perform_basecalling` flag is no longer supported.
+Command line options (e.g. to configure CUDA devices) can be passed to basecallers using the `guppy_options` and `dorado_options` options, respectively, in the config file.
+
+
+## Cluster vs. local work station execution
 
 You should also configure snakemake to work with your cluster. Example configuration files (`cluster_slurm.json` and `cluster_sge.json`) and launch scripts (`run_slurm.sh` and `run_sge.sh`) for use with SGE and SLURM are provided in the repo.
 
@@ -35,11 +56,10 @@ The pipeline is designed to parallelize base calling and methylation calling.
 
 # Input data
 
+The pipeline takes one top level folder per sample as input. The base directory is set in the `config.yaml` file using the `FAST5_basedir` option.
 
-The pipeline takes one top level folder per sample as input. The base directory is set in the `config.yaml` file.
-
-So for each sample, `<BASEDIR>/<samplename>/` should contain all FAST5 files. All subfolders are processed recursively. 
-The current version of the pipeline requires multi-FAST5 files. If you have data with the old format, you can convert them using [single_to_multi_fast5](https://github.com/nanoporetech/ont_fast5_api) script provided by ONT.
+So for each sample, `<BASEDIR>/<samplename>/` should contain all FAST5 or POD5 files. All subfolders are processed recursively. 
+The pipeline can handle multi-read FAST5 or POD5 files. If you have older single-read FAST5 data, you can convert them using [single_to_multi_fast5](https://github.com/nanoporetech/ont_fast5_api) script provided by ONT.
 
 # Output
 
@@ -82,6 +102,38 @@ This works for other training sets, too:
 
 `./run_slurm.sh reports/<SAMPLE>_WGS_report_<TRAININGSET>.pdf`
 
+#    Batch mode
+
+Sometimes you might want to classify several samples at once. You can use generate a zipped archive of reports for a given training set using the batch_samples option in your main config file (or an additional one). The following command would use an additional config file to define your batch and generate PDF reports for all samples plus a ZIP archive of these reports:
+
+`./run_slurm.sh --configfile my_batch.yaml reports/batch_reports_<TRAININGSET>.zip`
+
+my_batch.yaml should then hold the sample IDs of your batch to be processed:
+```
+batch_samples:
+- sample1
+- sample2
+```
+
 # Current issues
 
 - Rendering several reports in parallel (by specifying two or more target PDFs) fails due ambigious intermediate/temp file naming. You can work around this by specifing the (imaginary) pdfReport ressource when invoking snakemake: `--ressources pdfReport=1`. This option is automatically passed when using the `run_slurm.sh` or `run_sge.sh` wrappers, but you have to explicitly pass this when invoking snakemake directly. 
+- ONT's dorado basecaller currently does not respect system-wide proxy settings (like https_proxy). If you are behind a proxy and choose dorado for basecalling, please set dorado-specific environment variables `dorado_proxy` and `dorado_proxy_port` to allow automatic downloading of models, e.g. 
+```
+export dorado_proxy='my.proxy.org'
+export dorado_proxy_port=8080
+```
+
+
+# Citation
+
+If you use the nanoDx pipeline in your research, *please consider citing the following papers* in your work:
+
+[Kuschel LP, Hench J, Frank S, Hench IB, Girard E, Blanluet M, Masliah-Planchon J, Misch M, Onken J, Czabanka M, Yuan D, Lukassen S, Karau P, Ishaque N, Hain EG, Heppner F, Idbaih A, Behr N, Harms C, Capper D, Euskirchen P. Robust methylation-based classification of brain tumours using nanopore sequencing. Neuropathol Appl Neurobiol. 2023 Feb;49(1):e12856. doi: 10.1111/nan.12856.](https://doi.org/10.1111/nan.12856)
+
+[Euskirchen P, Bielle F, Labreche K, Kloosterman WP, Rosenberg S, Daniau M, Schmitt C, Masliah-Planchon J, Bourdeaut F, Dehais C, Marie Y, Delattre JY, Idbaih A. Same-day genomic and epigenomic diagnosis of brain tumors using real-time nanopore sequencing. Acta Neuropathol. 2017 Nov;134(5):691-703. doi: 10.1007/s00401-017-1743-5.](https://doi.org/10.1007/s00401-017-1743-5)
+
+# Disclaimer
+
+Methylation-based classification using nanopore whole genome sequening is a research tool currently under development.
+Interpretation and implementation of the results in a clinical setting is in the sole responsibility of the treating physician.

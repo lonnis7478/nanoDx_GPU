@@ -2,6 +2,7 @@ rule demux_qcat:
     input: "fastq/{run}.fq"
     output: directory("tmpDemux/{run}")
     conda: "envs/demux.yaml"
+    benchmark: "benchmarks/{run}.demux_qcat.benchmark.txt"
     threads: 12
     shell: "qcat -f {input} -b tmpDemux/{wildcards.run} --min-score 40 -t {threads} --trim"
 

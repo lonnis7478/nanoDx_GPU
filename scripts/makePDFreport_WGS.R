@@ -1,4 +1,5 @@
 library(rmarkdown)
+library(dplyr)
 
 CN <- normalizePath(snakemake@input[["CN"]])
 DICT_FILE <- normalizePath(snakemake@input[["DICT_FILE"]])
@@ -14,9 +15,18 @@ load(normalizePath(snakemake@input[["RFvotes"]]))
 row.names(votes) <- votes$Dx
 load(normalizePath(snakemake@input[["RFinfo"]]))
 
-render("scripts/WGSreport.Rmd", 
-       output_format = "pdf_document", 
-       output_dir=dirname(normalizePath(snakemake@output[[1]])),
-       output_file=basename(normalizePath(snakemake@output[[1]]))
-       )
+if (snakemake@config[["tsne_method"]] == "gpu") {
+    cudaTSNE <- normalizePath(snakemake@input[["cuda_tSNE"]])
 
+    render("scripts/WGSreportCUDA.Rmd",
+           output_format = "pdf_document",
+           output_dir=dirname(normalizePath(snakemake@output[[1]])),
+           output_file=basename(normalizePath(snakemake@output[[1]]))
+           )
+}else{
+    render("scripts/WGSreport.Rmd",
+           output_format = "pdf_document",
+           output_dir=dirname(normalizePath(snakemake@output[[1]])),
+           output_file=basename(normalizePath(snakemake@output[[1]]))
+           )
+}

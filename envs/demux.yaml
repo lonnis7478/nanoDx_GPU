@@ -4,5 +4,7 @@ channels:
   - defaults
   - default
 dependencies:
+  - python=3.8.6
+  - setuptools=49.6
   - qcat=1.1.0
   - ont-fast5-api

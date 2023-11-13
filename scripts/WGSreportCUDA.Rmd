@@ -65,7 +65,7 @@ knitr::include_graphics(CN)
 
 Methylation-based classification is based on **`r as.integer(model_info$num.features)`** CpG sites (overlap of sites covered in this sample and the training set).
 The out-of-bag error of this ad-hoc classifier is **`r round(model_info$oob.error*100, digits=1)`%**.
-Using this classifier, the sample has been classified as **`r ifelse(max(votes$cal_Freq)>=0.15, dict[rownames(votes[which.max(votes$cal_Freq),]),"Methylation.Class.Name"], "not classifiable (score < 0.15)")`**. 
+Using this classifier, the sample has been classified as **`r ifelse(max(votes$cal_Freq)>=0.15, dict[rownames(votes[which.max(votes$cal_Freq),]),"Methylation.Class.Name"], "not classifiable (score < 0.15)")`**.
 This prediction has a confidence score of **`r round(max(votes$cal_Freq), digits=3)`**.
 At the methylation class **family** (MCF) level, the sample has been classified as **`r ifelse(max(mcf$cal_Freq_MCF)>=0.15, mcf[which.max(mcf$cal_Freq_MCF),]$Methylation.Class.Family, "not classifiable (score < 0.15)")`**. The MCF prediction has a confidence score of **`r round(max(mcf$cal_Freq_MCF), digits=3)`**.
 
@@ -113,11 +113,19 @@ Dimensionality reduction plots are only meant for visual quality control, not cl
 knitr::include_graphics(tSNE)
 ```
 
+### CUDA TSNE plot
+
+Computed with the same hyperparameters as the "standard" TSNE.
+
+```{r, echo=FALSE}
+knitr::include_graphics(cudaTSNE)
+```
+
 #### Disclaimer
 
 Methylation-based classification using nanopore whole genome sequening is a research tool currently under development. It has not been clinically validated in sufficiently large cohorts. Interpretation and implementation of the results in a clinical setting is in the sole responsibility of the treating physician.
 
-  
-  
+
+
 
 (Report generated on `r Sys.time()`. Pipeline version: `r system("git describe --tags", intern = T)`, `r system("git log --pretty=format:'%h' -n 1", intern=T)`)

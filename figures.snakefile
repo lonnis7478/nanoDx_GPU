@@ -45,6 +45,29 @@ rule PDFreport_WGS:
         "scripts/makePDFreport_WGS.R"
 
 
+localrules: PDFreport_WGS_CUDA, email_report
+rule PDFreport_WGS_CUDA:
+    input:
+        demux="stats/{sample}_demux_stats.txt",
+        nanostat="stats/{sample}.nanostat.txt",
+        CN="plots/{sample}-1000-0.05-CNplot.pdf",
+        RFvotes="classification/{sample}-votes-RF5xCVrecal-{trainingSet}.RData",
+        RFinfo="classification/{sample}-model_info-RF5xCVrecal-{trainingSet}.RData",
+        DICT_FILE="static/{trainingSet}_dictionary.txt",
+        GC="figures/{sample}_GC.pdf",
+        RL="figures/{sample}_readlength.pdf",
+        tSNE="plots/{sample}-tSNE-{trainingSet}.pdf",
+        cuda_tSNE="plots/{sample}-tSNE-CUDA-{trainingSet}.pdf",
+        length_dist="stats/{sample}-length_dist.RData",
+        mosdepth="stats/{sample}.mosdepth.summary.txt"
+    output:
+        "reports/{sample}_WGS_report.CUDA_{trainingSet}.pdf"
+    resources: pdfReport=1
+    conda: "envs/PDFreport.yaml"
+    script:
+        "scripts/makePDFreport_WGS.R"
+
+
 rule email_report:
     input: 
         report="reports/{sample}_WGS_report_{trainingSet}.pdf",

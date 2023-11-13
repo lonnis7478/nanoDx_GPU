@@ -1,15 +1,3 @@
-
-rule alignNGMLR:
-    input:
-        fq="fastq/{sample}.fq",
-        ref=config["ref_genome"]
-    output:
-        "ngmlr/{sample}.bam"
-    threads: 24
-    conda: "envs/SV.yaml"
-    shell:
-        "ngmlr -t {threads} -r {input.ref} -q {input.fq} -x ont | samtools view -bS - | samtools sort - > {output}"
-
 rule callSVs:
     input:
         bam="bam/{sample}.bam",

@@ -4,5 +4,4 @@ channels:
   - defaults
   - default
 dependencies:
-  - nanoplot=1.28.2
-  - nanostat=1.4.0
+  - nanostat=1.6.0

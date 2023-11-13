@@ -7,3 +7,4 @@ dependencies:
   - r-rmarkdown=1.13
   - r-data.table
   - r-ggplot2
+  - r-dplyr

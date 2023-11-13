@@ -5,6 +5,7 @@ channels:
   - default
 dependencies:
   - r-rtsne
+  - r-uwot=0.1.16
   - r-irlba
   - r-ggplot2 
   - r-ggtext

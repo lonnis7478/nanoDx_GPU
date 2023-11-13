@@ -10,7 +10,7 @@ rule minimap2_align:
     threads: 12
     conda: "envs/minimap.yaml"
     shell:
-        "minimap2 --MD -L -t 9 -ax map-ont {input.ref} {input.fq} | samtools view -bS - | samtools sort -T tmp/{wildcards.sample} - > {output} "
+        "minimap2 --MD -L -t 9 -ax map-ont -y {input.ref} {input.fq} | samtools view -bS - | samtools sort -T tmp/{wildcards.sample} - > {output} "
 
 rule indexBAM:
     input:
@@ -18,19 +18,9 @@ rule indexBAM:
     output:
         "{sample}.bam.bai"
     conda: "envs/minimap.yaml"
+    benchmark: "benchmarks/{sample}.indexBAM.benchmark.txt"
     shell:
         "samtools index {input}"
-
-rule filterMAPQ:
-    input:
-        "bam/{sample}.bam"
-    output:
-        "bam_mapq/{sample}.bam"
-    params:
-        minMAPQ="20"
-    conda: "envs/minimap.yaml"
-    shell:
-        "samtools view -b -q {params.minMAPQ} {input} > {output}"
 
 rule coverage_wig:
     input:
@@ -40,6 +30,7 @@ rule coverage_wig:
         "igv/{sample}.wig"
     threads: 1
     conda: "envs/igvtools.yaml"
+    benchmark: "benchmarks/{sample}.coverage_wig.benchmark.txt"
     shell:
         "igvtools count -w 10000 {input.bam} {output} hg19"
 
@@ -52,6 +43,7 @@ rule coverage_mosdepth:
         "stats/{sample}.regions.bed.gz"
     threads: 1
     conda: "envs/mosdepth.yaml"
+    benchmark: "benchmarks/{sample}.coverage_mosdepth.benchmark.txt"
     shell:
         "mosdepth -n --fast-mode --by 10000 stats/{wildcards.sample} {input.bam}"
 
@@ -59,16 +51,11 @@ rule QC_nanostat:
     input:
         bam = "bam/{sample}.bam",
         bai = "bam/{sample}.bam.bai"
-    output:
-        txt = "stats/{sample}.nanostat.txt",
-	tsv = "stats/{sample}.nanostat.tsv"
+    output: "stats/{sample}.nanostat.txt"
     threads: 12
     conda: "envs/qc.yaml"
-    shell:
-        """
-	NanoStat -t {threads} --bam {input.bam} > {output.txt}
-	NanoStat -t {threads} --tsv --bam {input.bam} > {output.tsv}
-	"""
+    benchmark: "benchmarks/{sample}.QC_nanostat.benchmark.txt"
+    shell: "NanoStat -t {threads} --bam {input.bam} --no_supplementary > {output}"
 
 rule CN_profile:
     input:
@@ -81,6 +68,7 @@ rule CN_profile:
         bed="igv/{sample}-{binsize}-{alpha}.seg",
         bed1="igv/{sample}-{binsize}-{alpha}.bed"
     conda: "envs/createCNprofile.yaml"
+    benchmark: "benchmarks/{sample}.{binsize}.{alpha}.CN_profile.benchmark.txt"
     script:
         "scripts/createCNprofile.R"
 
@@ -91,6 +79,7 @@ rule mirrorBAM:
         bai="bam/{sample}.bam.bai"
     output:
         dir=temp(directory("tmp/ACE/{sample}"))
+    benchmark: "benchmarks/{sample}.mirrorBAM.benchmark.txt"
     shell: "mkdir {output} && cp {input} {output}"
 
 rule ACE:
@@ -99,4 +88,5 @@ rule ACE:
     output:
         dir=directory("ACE/{sample}")
     conda: "envs/ACE.yaml"
+    benchmark: "benchmarks/{sample}.ACE.benchmark.txt"
     script: "scripts/CNV_ACE.R"
