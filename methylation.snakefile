@@ -6,7 +6,7 @@ rule modbam_to_bedMethyl:
   output: "bedMethyl/{sample}.CpG.bed"
   conda: "envs/minimap.yaml"
   benchmark:"benchmarks/{sample}.modbam_to_bedMethyl.benchmark.txt"
-  threads: 4
+  threads: 8
   shell: "modkit pileup {input.bam} {output} --ref {input.ref} --preset traditional --only-tabs --threads {threads}"
 
 rule readCpGs:
@@ -20,44 +20,43 @@ rule readCpGs:
     script:
         "scripts/readCpGs.R"
 
-if config["tsne_method"]=="gpu":
-    rule get_tSNE_data:
-        input:
-            case="methylation/{sample}.RData",
-            trainingset=config["trainingset_dir"] + "/{trainingset}.h5",
-            colorMap="static/colorMap_{trainingset}.txt"
-        output:
-            beta="betaValues/{sample}.{trainingset}.beta.csv",
-            m="betaValues/{sample}.{trainingset}.m.csv"
-        params:
-            save_dataframes = "yes",
-            cpg_file="benchmarks/CpGs_benchmark.txt"
-        conda: "envs/tSNE.yaml"
-        benchmark: "benchmarks/{sample}.{trainingset}.get_tSNE_data.benchmark.txt"
-        threads:4,
-        script:"scripts/plot_tSNE.R"
 
-    rule tSNE_CUDA:
-        input:
-            beta="betaValues/{sample}.{trainingset}.beta.csv",
-            m="betaValues/{sample}.{trainingset}.m.csv"
-        output:
-            tsne="cudaTSNE/{sample}.{trainingset}.tsne.csv"
-        conda: "envs/cuml.yaml"
-        benchmark: "benchmarks/{sample}.{trainingset}.cuml_tsne.benchmark.txt"
-        script: "scripts/cuda_tsne.py"
+rule get_tSNE_data:
+    input:
+        case="methylation/{sample}.RData",
+        trainingset=config["trainingset_dir"] + "/{trainingset}.h5",
+        colorMap="static/colorMap_{trainingset}.txt",
+    output:
+        beta="betaValues/{sample}.{trainingset}.beta.csv",
+        m="betaValues/{sample}.{trainingset}.m.csv"
+    params:
+        save_dataframes = "yes",
+        cpg_file="benchmarks/CpGs_benchmark.txt"
+    conda: "envs/cudaTSNE.yaml"
+    benchmark: "benchmarks/{sample}.{trainingset}.get_tSNE_data.benchmark.txt"
+    threads:4,
+    script:"scripts/plot_tSNE.R"
 
-    rule plot_tSNE_CUDA:
-        input:
-            tsne="cudaTSNE/{sample}.{trainingset}.tsne.csv",
-            colorMap="static/colorMap_{trainingset}.txt"
-        output:
-            pdf = "plots/{sample}-tSNE-CUDA-{trainingset}.pdf",
-            html = "plots/{sample}-tSNE-CUDA-{trainingset}.html"
-        conda:"envs/tSNE.yaml"
-        benchmark: "benchmarks/{sample}.{trainingset}.plot_tSNE_CUDA.benchmark.txt"
-        script:"scripts/only_plot_tSNE.R"
+rule tSNE_CUDA:
+    input:
+        beta="betaValues/{sample}.{trainingset}.beta.csv",
+        m="betaValues/{sample}.{trainingset}.m.csv"
+    output:
+        tsne="cudaTSNE/{sample}.{trainingset}.tsne.csv"
+    conda: "envs/cuml.yaml"
+    benchmark: "benchmarks/{sample}.{trainingset}.cuml_tsne.benchmark.txt"
+    script: "scripts/cuda_tsne.py"
 
+rule plot_tSNE_CUDA:
+    input:
+        tsne="cudaTSNE/{sample}.{trainingset}.tsne.csv",
+        colorMap="static/colorMap_{trainingset}.txt"
+    output:
+        pdf = "plots/{sample}-tSNE-CUDA-{trainingset}.pdf",
+        html = "plots/{sample}-tSNE-CUDA-{trainingset}.html"
+    conda:"envs/tSNE.yaml"
+    benchmark: "benchmarks/{sample}.{trainingset}.plot_tSNE_CUDA.benchmark.txt"
+    script:"scripts/only_plot_tSNE.R"
 
 
 rule plot_tSNE:
@@ -132,9 +131,28 @@ rule RF5xCVrecal:
     threads: 12
     script: "scripts/pyRF5xCVrecal.py"
 
-rule update_benchmark_stats:
+rule CUDA_classifier:
     input:
-        pdf="plots/{sample}-RF5xCVrecal-{trainingset}.pdf"
+        data="training/{sample}-FeatureSelection_idf-{trainingset}.p",
+        trainingset_meth=config["trainingset_dir"] + "/{trainingset}.h5",
+        meth="transformed_rdata/{sample}-transformed.RData",
     output:
-        statistics="benchmarks/benchmark_stats.md"
-    script: "scripts/benchmark_statistics.py"
+        pdf="plots/cuda/{sample}-CudaClassifier-{trainingset}.pdf",
+        txt="classification/{sample}-votes-CudaClassifier-{trainingset}.txt",
+        votes="classification/{sample}-votes-CudaClassifier-{trainingset}.RData",
+        model_info="classification/{sample}-model_info-CudaClassifier-{trainingset}.RData"
+    benchmark: "benchmarks/{sample}.CUDA_classifier.{trainingset}.benchmark.txt"
+    conda: "envs/pyClassifier.yaml"
+    threads: 12
+    script: "scripts/cuda_classifier.py"
+
+
+rule benchmark:
+    input:
+        rep="reports/{sample}_WGS_report_CUDA_{trainingSet}.pdf",
+    shell:
+        "python scripts/benchmarking_pipeline.py {wildcards.sample}"
+
+
+
+

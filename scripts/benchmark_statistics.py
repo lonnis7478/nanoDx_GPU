@@ -47,19 +47,28 @@ cpg_df = pd.read_csv("benchmarks/CpGs_benchmark.txt", sep="\t", names=["sample",
 for sample in samples:
 
     time_sum = 0.0
+    old_time = 0.0
     file_counter = 0
 
     for file in os.listdir("benchmarks"):
-        if sample in file and "fast5" not in file:
+        if sample+"." in file and "fast5" not in file:
             file_counter += 1
             df = pd.read_csv("benchmarks/" + file, sep="\t")
-            time_sum += df["s"][0]
+
+
+            if "cuml_tsne" not in file and "get_tSNE_data" not in file and "plot_tSNE_CUDA" not in file:
+
+                old_time += df["s"][0]
+
+            if "plot_tSNE" not in file:
+                time_sum += df["s"][0]
     data = {}
     cpg_sample = cpg_df.loc[cpg_df['sample'] == sample]
 
     if not cpg_sample["cpgs"].empty:
         data["cpgs"] = cpg_sample["cpgs"].iloc[0]
     data["total"] = time_sum
+    data["total_old"] = old_time
 
     sample_data[sample] = data
 
@@ -78,15 +87,18 @@ html += md.markdown(table, extensions=["tables"])
 
 html += "<br/><br/>"
 
-header = "| Sample | CpGs | Time (s) | Time (min) |"
+header = "| Sample | CpGs | Time (s) | Time New (min) | Time - original (min) |"
 has_completedHeader = False
-header_divider = " |--------|--------|--------|--------|"
+header_divider = " |--------|--------|--------|--------|--------|"
 table = ""
 
 for sample in sample_data:
     min = math.floor(sample_data[sample]["total"] / 60)
     seconds = round((sample_data[sample]["total"] / 60 - min) * 60)
-    table += "|" + sample + "| " + str(sample_data[sample]["cpgs"]) + " |" + str(round(sample_data[sample]["total"])) + "|" + str(min)+"min " +str(seconds)+"s |"
+
+    min_old = math.floor(sample_data[sample]["total_old"] / 60)
+    seconds_old = round((sample_data[sample]["total_old"] / 60 - min) * 60)
+    table += "|" + sample + "| " + str(sample_data[sample]["cpgs"]) + " |" + str(round(sample_data[sample]["total"])) + "|" + str(min)+"min " +str(seconds)+"s |" + str(min_old)+"min " +str(seconds_old)+"s |"
     for rule in rule_data:
         if not has_completedHeader:
             header += rule+"|"
@@ -104,13 +116,13 @@ html += md.markdown("## Sample statistics")
 table = header +"\n"+ header_divider + "\n"+table
 html += md.markdown(table, extensions=["tables"])
 
-header = "| Sample | TSNE (s)| CUDA TSNE (s) | Speedup (%) |\n"
+header = "| Sample | TSNE (s)| CUDA TSNE (s) | Speedup (X) |\n"
 header_divider = " |--------|--------|--------|--------|\n"
 table = ""
 
 for sample in sample_data:
     if sample in rule_data["plot_tSNE"] and sample in rule_data["cuml_tsne"]:
-        table += "| " + sample + "| "+str(rule_data["plot_tSNE"][sample])+" | "+str(rule_data["cuml_tsne"][sample])+" | "+str((rule_data["cuml_tsne"][sample] / rule_data["plot_tSNE"][sample])*100)+" |\n"
+        table += "| " + sample + "| "+str(rule_data["plot_tSNE"][sample])+" | "+str(rule_data["cuml_tsne"][sample])+" | "+str((rule_data["plot_tSNE"][sample] / rule_data["cuml_tsne"][sample]))+" |\n"
 
 html += "<br/><br/>"
 html += md.markdown("## TSNE vs. CUDA TSNE")

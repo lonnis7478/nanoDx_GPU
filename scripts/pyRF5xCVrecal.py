@@ -4,16 +4,16 @@ import pandas as pd
 import h5py
 import pyreadr
 from sklearn.ensemble import RandomForestClassifier
-#from cuml.ensemble import RandomForestClassifier
 import logging
 import collections
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import brewer2mpl 
+import brewer2mpl
 import warnings
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
 import pickle
+from time import time
 warnings.filterwarnings("ignore")
 
 ##### Reading trainingset data
@@ -43,11 +43,15 @@ X_test=case[X_train.columns.to_list()]
 
 ##### random forest classifier and get the votes
 print('Train random forest...')
+
+
 rf = RandomForestClassifier(criterion='entropy',  min_samples_split=4, min_samples_leaf=1,
-                       n_estimators=2000,random_state=42,n_jobs= 12,oob_score=True, verbose=1)
+                       n_estimators=2000,random_state=42,n_jobs= 12,oob_score=True, verbose=1, max_depth=8)
 rf.fit(X_train, label)
 
+
 pre_rf=rf.predict(X_test)
+
 x_score=max(rf.predict_proba(X_test)[0])
 pre_class=pre_rf[0]
 
@@ -62,6 +66,7 @@ predictions_trees=list(map(lambda i:pre_singletree(i, X_test,rf.classes_), rf.es
 
 tmp = [i[0] for i in predictions_trees]
 rownames=[i[0] for i in collections.Counter(tmp).items()]
+
 Freq=[i[1] for i in collections.Counter(tmp).items()]
 Var1= [i[1] for i in predictions_trees]
 
@@ -76,11 +81,19 @@ print('Running 5-fold CV...')
 def get_proba_CalibratedClassifierCV(X_train,y_train):
     cv = RepeatedStratifiedKFold(n_splits=5,n_repeats=1,random_state=1)
     clf = RandomForestClassifier(criterion='entropy',  min_samples_split=4, min_samples_leaf=1,
-                       n_estimators=2000,random_state=42,n_jobs= 12,oob_score=True, verbose=1)
+                       n_estimators=200,random_state=42,n_jobs= 12,oob_score=True, verbose=1)
 
     clf_sigmoid = CalibratedClassifierCV(clf, cv=cv, method='sigmoid',n_jobs =-1,ensemble=False)
+
+    start = time()
     clf_sigmoid.fit(X_train, y_train)
+    done = time()
+    print("Calibrated classifier time : ", done - start)
+
+    start = time()
     res_proba=clf_sigmoid.predict_proba(X_test)
+    done = time()
+    print("Calibrated classifier prediction time : ", done -start)
     proba = pd.DataFrame(data={'cal_Freq': res_proba[0]} , index=clf_sigmoid.classes_ )
     return proba
 

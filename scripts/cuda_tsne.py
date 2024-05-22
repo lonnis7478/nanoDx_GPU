@@ -161,13 +161,15 @@ beta = format_beta_values(beta, pca_components=snakemake.config["tsne_pca_dim"])
 
 start = time()
 tsne = None
-tsne = cumlTSNE(n_components=2, perplexity=snakemake.config["tsne_perplexity"], n_iter=snakemake.config["tsne_max_iter"], output_type="numpy").fit_transform(beta)
-
+tsne = cumlTSNE(n_components=2, perplexity=snakemake.config["tsne_perplexity"], n_iter=snakemake.config["tsne_max_iter"], output_type="numpy", random_state=42, verbose=4)
+output = tsne.fit_transform(beta)
 done = time()
 
 print("Total elapsed time : ", done - start)
 
-df = pandas.DataFrame({"Dx": m["x"], "X1": tsne[:, 0], "X2": tsne[:, 1]})
+df = pandas.DataFrame({"Dx": m["x"], "X1": output[:, 0], "X2": output[:, 1]})
 
 
 df.to_csv(snakemake.output["tsne"])
+
+print("T-SNE iterations : ", tsne.n_iter)
