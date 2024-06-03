@@ -29,12 +29,12 @@ rule PDFreport_WGS:
         demux="stats/{sample}_demux_stats.txt",
         nanostat="stats/{sample}.nanostat.txt",
         CN="plots/{sample}-1000-0.05-CNplot.pdf",
-        RFvotes="classification/{sample}-votes-RF5xCVrecal-{trainingSet}.RData",
-        RFinfo="classification/{sample}-model_info-RF5xCVrecal-{trainingSet}.RData",
+        RFvotes="classification/{sample}-votes-CudaClassifier-{trainingSet}.RData",
+        RFinfo="classification/{sample}-model_info-CudaClassifier-{trainingSet}.RData",
         DICT_FILE="static/{trainingSet}_dictionary.txt",
         GC="figures/{sample}_GC.pdf",
         RL="figures/{sample}_readlength.pdf",
-        tSNE="plots/{sample}-tSNE-{trainingSet}.pdf",
+        tSNE="plots/{sample}-tSNE-CUDA-{trainingSet}.pdf",
         length_dist="stats/{sample}-length_dist.RData",
         mosdepth="stats/{sample}.mosdepth.summary.txt"
     output:
@@ -43,51 +43,6 @@ rule PDFreport_WGS:
     conda: "envs/PDFreport.yaml"
     script:
         "scripts/makePDFreport_WGS.R"
-
-
-rule PDFreport_WGS_CUDA:
-    input:
-        demux="stats/{sample}_demux_stats.txt",
-        nanostat="stats/{sample}.nanostat.txt",
-        CN="plots/{sample}-1000-0.05-CNplot.pdf",
-        DICT_FILE="static/{trainingSet}_dictionary.txt",
-        GC="figures/{sample}_GC.pdf",
-        RL="figures/{sample}_readlength.pdf",
-        cuda_tSNE="plots/{sample}-tSNE-CUDA-{trainingSet}.pdf",
-        length_dist="stats/{sample}-length_dist.RData",
-        mosdepth="stats/{sample}.mosdepth.summary.txt",
-        CUDAvotes="classification/{sample}-votes-CudaClassifier-{trainingSet}.RData",
-        cuda_model_info="classification/{sample}-model_info-CudaClassifier-{trainingSet}.RData"
-    output:
-        "reports/{sample}_WGS_report.CUDA_{trainingSet}.pdf"
-    resources: pdfReport=1
-    conda: "envs/PDFreport.yaml"
-    script:
-        "scripts/makePDFreport_WGS.R"
-
-rule PDFreport_WGS_CUDA_Fast:
-    input:
-        demux = "stats/{sample}_demux_stats.txt",
-        nanostat = "stats/{sample}.nanostat.txt",
-        CN = "plots/{sample}-1000-0.05-CNplot.pdf",
-        GC="figures/{sample}_GC.pdf",
-        RL="figures/{sample}_readlength.pdf",
-        length_dist="stats/{sample}-length_dist.RData",
-        mosdepth="stats/{sample}.mosdepth.summary.txt",
-        RFvotes="classification/{sample}-votes-RF5xCVrecal-{trainingSet}.RData",
-        RFinfo="classification/{sample}-model_info-RF5xCVrecal-{trainingSet}.RData",
-        DICT_FILE="static/{trainingSet}_dictionary.txt",
-        cuda_tSNE="plots/{sample}-tSNE-CUDA-{trainingSet}.pdf",
-        CUDAvotes="classification/{sample}-votes-CudaClassifier-{trainingSet}.RData",
-        cuda_model_info="classification/{sample}-model_info-RF5xCVrecal-{trainingSet}.RData"
-    output:
-        "reports/{sample}_WGS_report.CUDA.Fast_{trainingSet}.pdf"
-    resources: pdfReport=1
-    conda: "envs/PDFreport.yaml"
-    script:
-        "scripts/makePDFreport_WGS.R"
-    
-
 
 rule email_report:
     input: 

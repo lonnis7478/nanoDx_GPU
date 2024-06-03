@@ -58,29 +58,6 @@ rule plot_tSNE_CUDA:
     benchmark: "benchmarks/{sample}.{trainingset}.plot_tSNE_CUDA.benchmark.txt"
     script:"scripts/only_plot_tSNE.R"
 
-
-rule plot_tSNE:
-    input:
-        case="methylation/{sample}.RData",
-        trainingset=config["trainingset_dir"] + "/{trainingset}.h5",
-        colorMap="static/colorMap_{trainingset}.txt"
-    output:
-        pdf="plots/{sample}-tSNE-{trainingset}.pdf",
-        html="plots/{sample}-tSNE-{trainingset}.html"
-    params:
-        dim_reduction_method = config["dim_reduction_method"] if 'dim_reduction_method' in config.keys() else 'tsne',
-        tsne_pca_dim = config["tsne_pca_dim"] if 'tsne_pca_dim' in config.keys() else 94,
-        tsne_perplexity = config["tsne_perplexity"] if 'tsne_perplexity' in config.keys() else 30,
-        tsne_max_iter = config["tsne_max_iter"] if 'tsne_max_iter' in config.keys() else 2500,
-        umap_n_neighbours = config["umap_n_neighbours"] if 'umap_n_neighbours' in config.keys() else 10,
-        umap_min_dist = config["umap_min_dist"] if 'umap_min_dist' in config.keys() else 0.5,
-        save_dataframes = "no",
-        cpg_file="benchmarks/CpGs_benchmark.txt",
-    conda: "envs/tSNE.yaml"
-    benchmark:"benchmarks/{sample}.{trainingset}.plot_tSNE.benchmark.txt"
-    threads: 4
-    script: "scripts/plot_tSNE.R"
-
 rule transform_Rdata:
     input:
         meth="methylation/{sample}.RData"
@@ -116,21 +93,6 @@ rule Feature_selection_tfidf:
     threads: 12
     script: "scripts/feature_selection_tfidf.py"
 
-rule RF5xCVrecal:
-    input:
-        data="training/{sample}-FeatureSelection_idf-{trainingset}.p",
-        trainingset_meth=config["trainingset_dir"] + "/{trainingset}.h5",
-        meth="transformed_rdata/{sample}-transformed.RData"
-    output:
-        pdf="plots/{sample}-RF5xCVrecal-{trainingset}.pdf",
-        txt="classification/{sample}-votes-RF5xCVrecal-{trainingset}.txt",
-        votes="classification/{sample}-votes-RF5xCVrecal-{trainingset}.RData",
-        model_info="classification/{sample}-model_info-RF5xCVrecal-{trainingset}.RData"
-    benchmark: "benchmarks/{sample}.RF5xCVrecal.{trainingset}.benchmark.txt"
-    conda: "envs/pyClassifier.yaml"
-    threads: 12
-    script: "scripts/pyRF5xCVrecal.py"
-
 rule CUDA_classifier:
     input:
         data="training/{sample}-FeatureSelection_idf-{trainingset}.p",
@@ -145,14 +107,6 @@ rule CUDA_classifier:
     conda: "envs/pyClassifier.yaml"
     threads: 12
     script: "scripts/cuda_classifier.py"
-
-
-rule benchmark:
-    input:
-        rep="reports/{sample}_WGS_report_CUDA_{trainingSet}.pdf",
-    shell:
-        "python scripts/benchmarking_pipeline.py {wildcards.sample}"
-
 
 
 
