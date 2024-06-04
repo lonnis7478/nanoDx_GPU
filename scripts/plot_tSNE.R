@@ -42,6 +42,7 @@ trainingProbes <- h5read(fh5,"probeIDs")
 probes <- intersect(colnames(case), trainingProbes)
 idxs <- match(probes, trainingProbes)
 
+
 write(paste0(snakemake@wildcards[["sample"]],"\t",length(probes)), file=snakemake@params[["cpg_file"]], append=TRUE)
 message(paste(length(probes)," overlapping CpG sites between sample and reference set. Reading training set now...",sep=""))
 
@@ -58,14 +59,14 @@ dim(m)
 library(matrixStats)
 beta <- as.matrix(m[,-1])
 sds <- colSds(beta, na.rm=F)
-maxSDs <- head(order(sds,decreasing=T),n=min(ncol(beta),50000))
+maxSDs <- head(order(sds,decreasing=T),n=min(ncol(beta),snakemake@params["max_CpG"]))
 
 
 if(snakemake@params[["save_dataframes"]] == "yes") {
-    write.csv(beta[,maxSDs], snakemake@output[["beta"]])
+    write.csv(beta[,maxSDs], snakemake@output[["beta"]])}
+
     write.csv(m[,1], snakemake@output[["m"]])
     quit()
-}
 
 # perform tSNE or UMAP reduction
 

@@ -88,6 +88,9 @@ y = np.array(encoded)
 X_test = X_test.values.reshape((X_train.shape[1],))
 X_train = X_train.values
 
+cpgs = max_CpG = snakemake.params["max_CpG"]
+X_train = X_train[:,:cpgs]
+X_test = X_test[:cpgs]
 
 
 print("Dimensions:")

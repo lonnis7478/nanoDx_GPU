@@ -21,4 +21,5 @@ rownames(CpGcalls) <- CpGcalls$probeID
 case <- data.frame(t(CpGcalls))
 case <- case["isMethylated",]
 
+
 save(case, file = snakemake@output[[1]])

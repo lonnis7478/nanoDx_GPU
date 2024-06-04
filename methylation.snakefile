@@ -31,7 +31,8 @@ rule get_tSNE_data:
         m="betaValues/{sample}.{trainingset}.m.csv"
     params:
         save_dataframes = "yes",
-        cpg_file="benchmarks/CpGs_benchmark.txt"
+        cpg_file="benchmarks/CpGs_benchmark.txt",
+        max_CpG=config["max_CpG"]
     conda: "envs/cudaTSNE.yaml"
     benchmark: "benchmarks/{sample}.{trainingset}.get_tSNE_data.benchmark.txt"
     threads:4,
@@ -103,6 +104,8 @@ rule CUDA_classifier:
         txt="classification/{sample}-votes-CudaClassifier-{trainingset}.txt",
         votes="classification/{sample}-votes-CudaClassifier-{trainingset}.RData",
         model_info="classification/{sample}-model_info-CudaClassifier-{trainingset}.RData"
+    params:
+        max_CpG = config["max_CpG"]
     benchmark: "benchmarks/{sample}.CUDA_classifier.{trainingset}.benchmark.txt"
     conda: "envs/pyClassifier.yaml"
     threads: 12
