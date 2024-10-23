@@ -31,21 +31,21 @@ rule PDFreport_WGS:
         demux="results/stats/{sample}_demux_stats.txt",
         nanostat="results/stats/{sample}.nanostat.txt",
         CN="results/plots/{sample}-1000-0.05-CNplot.pdf",
-        RFvotes="results/classification/{sample}-votes-CudaClassifier-{trainingSet}.RData",
-        RFinfo="results/classification/{sample}-model_info-CudaClassifier-{trainingSet}.RData",
+        RFvotes="results/classification/{sample}-votes-RF5xCVrecal-{trainingSet}.RData",
+        RFinfo="results/classification/{sample}-model_info-RF5xCVrecal-{trainingSet}.RData",
         DICT_FILE="static/{trainingSet}_dictionary.txt",
         GC="results/figures/{sample}_GC.pdf",
         RL="results/figures/{sample}_readlength.pdf",
-        tSNE="results/plots/{sample}-tSNE-CUDA-{trainingSet}.pdf",
+        tSNE="results/plots/{sample}-tSNE-{trainingSet}.pdf",
         length_dist="results/stats/{sample}-length_dist.RData",
         mosdepth="results/stats/{sample}.mosdepth.summary.txt"
     output:
         "results/reports/{sample}_WGS_report_{trainingSet}.pdf"
     resources: pdfReport=1
     conda: "envs/PDFreport.yaml"
-    benchmark: "results/benchmarks/{sample}/PDFreport_WGS.{trainingSet}.txt"
     script:
         "scripts/makePDFreport_WGS.R"
+
 
 
 rule generate_statistics:

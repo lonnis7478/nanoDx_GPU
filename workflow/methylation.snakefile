@@ -20,44 +20,26 @@ rule readCpGs:
     script:
         "scripts/readCpGs.R"
 
-
-rule get_tSNE_data:
+rule plot_tSNE:
     input:
         case="results/methylation/{sample}.RData",
         trainingset=config["trainingset_dir"] + "/{trainingset}.h5",
-        colorMap="static/colorMap_{trainingset}.txt",
-    output:
-        beta="results/betaValues/{sample}.{trainingset}.beta.csv",
-        m="results/betaValues/{sample}.{trainingset}.m.csv"
-    params:
-        save_dataframes = "yes",
-        cpg_file="results/benchmarks/CpGs_benchmark.txt",
-        max_CpG=config["max_CpG"]
-    conda: "envs/cudaTSNE.yaml"
-    benchmark: "results/benchmarks/{sample}/get_tSNE_data.{trainingset}.txt"
-    threads:4,
-    script:"scripts/plot_tSNE.R"
-
-rule tSNE_CUDA:
-    input:
-        beta="results/betaValues/{sample}.{trainingset}.beta.csv",
-        m="results/betaValues/{sample}.{trainingset}.m.csv"
-    output:
-        tsne="results/cudaTSNE/{sample}.{trainingset}.tsne.csv"
-    conda: "envs/cuml.yaml"
-    benchmark: "results/benchmarks/{sample}/cuml_tsne.{trainingset}.txt"
-    script: "scripts/cuda_tsne.py"
-
-rule plot_tSNE_CUDA:
-    input:
-        tsne="results/cudaTSNE/{sample}.{trainingset}.tsne.csv",
         colorMap="static/colorMap_{trainingset}.txt"
     output:
-        pdf = "results/plots/{sample}-tSNE-CUDA-{trainingset}.pdf",
-        html = "results/plots/{sample}-tSNE-CUDA-{trainingset}.html"
-    conda:"envs/tSNE.yaml"
-    benchmark: "results/benchmarks/{sample}/plot_tSNE_CUDA.{trainingset}.txt"
-    script:"scripts/only_plot_tSNE.R"
+        pdf="results/plots/{sample}-tSNE-{trainingset}.pdf",
+        html="results/plots/{sample}-tSNE-{trainingset}.html"
+    params:
+        dim_reduction_method = config["dim_reduction_method"] if 'dim_reduction_method' in config.keys() else 'tsne',
+        tsne_pca_dim = config["tsne_pca_dim"] if 'tsne_pca_dim' in config.keys() else 94,
+        tsne_perplexity = config["tsne_perplexity"] if 'tsne_perplexity' in config.keys() else 30,
+        tsne_max_iter = config["tsne_max_iter"] if 'tsne_max_iter' in config.keys() else 2500,
+        umap_n_neighbours = config["umap_n_neighbours"] if 'umap_n_neighbours' in config.keys() else 10,
+        umap_min_dist = config["umap_min_dist"] if 'umap_min_dist' in config.keys() else 0.5
+    conda: "envs/tSNE.yaml"
+    benchmark:"results/benchmarks/{sample}/plot_tSNE.{trainingset}.txt"
+    threads: 4
+    script: "scripts/plot_tSNE.R"
+
 
 rule transform_Rdata:
     input:
@@ -97,22 +79,6 @@ rule Feature_selection_tfidf:
     threads: 12
     script: "scripts/feature_selection_tfidf.py"
 
-rule CUDA_classifier:
-    input:
-        data="results/training/{sample}-FeatureSelection_idf-{trainingset}.p",
-        trainingset_meth=config["trainingset_dir"] + "/{trainingset}.h5",
-        meth="results/transformed_rdata/{sample}-transformed.RData",
-    output:
-        pdf="results/plots/cuda/{sample}-CudaClassifier-{trainingset}.pdf",
-        txt="results/classification/{sample}-votes-CudaClassifier-{trainingset}.txt",
-        votes="results/classification/{sample}-votes-CudaClassifier-{trainingset}.RData",
-        model_info="results/classification/{sample}-model_info-CudaClassifier-{trainingset}.RData"
-    params:
-        max_CpG = config["max_CpG"]
-    benchmark: "results/benchmarks/{sample}/CUDA_classifier.{trainingset}.txt"
-    conda: "envs/pyClassifier.yaml"
-    threads: 12
-    script: "scripts/cuda_classifier.py"
 
 
 rule RF5xCVrecal:
