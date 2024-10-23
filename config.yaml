@@ -1,8 +1,0 @@
-ref_genome: static/hg19.fa
-ref_genome_masked: static/hg19.fa
-FAST5_basedir: /home/sander/nanopore/Guppy_testing
-trainingset_dir: static/Trainingsets
-chr_sizes: static/hg19.chrom.sizes
-email: "info@mail.com"
-max_CpG: 100000
-perform_basecalling: no

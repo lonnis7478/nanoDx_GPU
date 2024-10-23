@@ -1,20 +1,17 @@
 #!/bin/bash
 
-PARENT_DIR=$1
-TARGET_TYPE=$2
 
-for folder in "$PARENT_DIR"/*; do
+parent_dir="/home/sander/Documents/NDMA_subsampled"
+
+for folder in "$parent_dir"/*/; do
+
   sample=$(basename "$folder")
-  if [ $TARGET_TYPE = "report" ]; then
-    target="../results/reports/${sample}_WGS_report_Capper_et_al.pdf"
-  elif [ $TARGET_TYPE = "stats" ]; then
-    target="../results/benchmarks/${sample}/stats.csv"
-  fi
+  
 
-  snakemake --use-conda "$target" --cores 12
+  stats="results/benchmarks/${sample}/stats.csv"
+  
+  # Run the Snakemake command for the current sample
+  snakemake --use-conda $stats --cores 12 --unlock
 done
-
-
-
 
 

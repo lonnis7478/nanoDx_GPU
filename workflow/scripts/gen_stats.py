@@ -5,9 +5,9 @@ sample = snakemake.wildcards.sample
 
 df = pd.DataFrame(columns=['rule', 'time'])
 
-for file in os.listdir("benchmarks/"+sample):
+for file in os.listdir("results/benchmarks/"+sample):
     rule = file.split(".")[0]
-    bench_df = pd.read_csv("benchmarks/"+sample+"/"+file, sep="\t")
+    bench_df = pd.read_csv("results/benchmarks/"+sample+"/"+file, sep="\t")
 
     df.loc[-1] = [rule, bench_df["s"].values[0]]  # adding a row
     df.index = df.index + 1  # shifting index
